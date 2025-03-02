@@ -1,0 +1,25 @@
+{
+  "name": "nodejs-hw-mongodb",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [],
+  "author": "Volodymyr Vatutin <vovavat97@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^9.21.0",
+    "nodemon": "^3.1.9"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.11.0",
+    "pino": "^9.6.0"
+  }
+}
