@@ -3,6 +3,8 @@ const cors = require('cors');
 const pino = require('pino')();
 require('dotenv').config();
 
+const contactsRouter = require('./routes/contacts'); // Імпортуємо роут для контактів
+
 function setupServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
@@ -14,6 +16,8 @@ function setupServer() {
     pino.info(`${req.method} ${req.url}`);
     next();
   });
+
+  app.use('/contacts', contactsRouter);
 
   app.use((req, res) => {
     res.status(404).json({ message: 'Not found' });
