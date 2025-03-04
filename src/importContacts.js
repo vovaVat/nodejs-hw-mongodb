@@ -1,15 +1,16 @@
+// src/importContacts.js
+import fs from 'fs';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import path from 'node:path';
+import Contact from './models/contact.js';
 
-dotenv.config({ path: path.join('..', '.env') });
+dotenv.config();
 
-async function initMongoConnection() {
+const initMongoConnection = async () => {
   const { MONGODB_USER, MONGODB_PASSWORD, MONGODB_URL, MONGODB_DB } =
     process.env;
-
-  //const mongoUri = `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_URL}/${MONGODB_DB}?retryWrites=true&w=majority`;
   const mongoUri = `mongodb+srv://vovavat97:1UnefWeSbIjCQI2r@cluster0.gpceq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+
   try {
     await mongoose.connect(mongoUri);
     console.log('Mongo connection successfully established!');
@@ -17,13 +18,11 @@ async function initMongoConnection() {
     console.error('Mongo connection error:', error);
     process.exit(1);
   }
-}
+};
 
 const importContacts = async () => {
   try {
-    const contactsData = JSON.parse(
-      fs.readFileSync('../contacts.json', 'utf8')
-    );
+    const contactsData = JSON.parse(fs.readFileSync('contacts.json', 'utf8'));
 
     const contacts = await Contact.insertMany(contactsData);
     console.log('Contacts imported successfully!', contacts);
@@ -40,5 +39,3 @@ const start = async () => {
 };
 
 start();
-
-export default initMongoConnection;
