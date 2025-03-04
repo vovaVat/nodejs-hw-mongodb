@@ -2,7 +2,8 @@ import initMongoConnection from './db/initMongoConnection.js';
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import contactsRouter from './routes/contacts.js';
+
+const contactsRouter = require('./routes/contacts');
 
 dotenv.config();
 
