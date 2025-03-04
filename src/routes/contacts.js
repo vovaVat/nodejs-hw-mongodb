@@ -7,4 +7,4 @@ router.get('/', contactsController.getContacts);
 
 router.get('/:contactId', contactsController.getContactById);
 
-module.exports = router;
+export default router;
