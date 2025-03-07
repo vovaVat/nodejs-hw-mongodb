@@ -1,9 +1,9 @@
-const express = require('express');
-const cors = require('cors');
-const pino = require('pino')();
+import express from 'express';
+import cors from 'cors';
+import pino from 'pino';
 require('dotenv').config();
 
-const contactsRouter = require('./routes/contacts'); // Імпортуємо роут для контактів
+import contactsRouter from './routes/contacts'; // Імпортуємо роут для контактів
 
 function setupServer() {
   const app = express();

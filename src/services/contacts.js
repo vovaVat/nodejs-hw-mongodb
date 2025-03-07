@@ -1,6 +1,6 @@
-const Contact = require('../models/contact');
+import Contact from '../models/contact.js';
 
-async function getAllContacts() {
+export async function getAllContacts() {
   try {
     const contacts = await Contact.find();
     return contacts;
@@ -9,7 +9,7 @@ async function getAllContacts() {
   }
 }
 
-async function getContactById(contactId) {
+export async function getContactById(contactId) {
   try {
     const contact = await Contact.findById(contactId);
     return contact;
@@ -17,8 +17,3 @@ async function getContactById(contactId) {
     throw new Error('Error fetching contact by ID');
   }
 }
-
-module.exports = {
-  getAllContacts,
-  getContactById,
-};

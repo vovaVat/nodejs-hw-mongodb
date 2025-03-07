@@ -2,13 +2,13 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'node:path';
 
-dotenv.config({ path: path.join('..', '.env') });
+dotenv.config();
 
 async function initMongoConnection() {
   const { MONGODB_USER, MONGODB_PASSWORD, MONGODB_URL, MONGODB_DB } =
     process.env;
 
-  const mongoUri = `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_URL}/${MONGODB_DB}?retryWrites=true&w=majority`;
+  const mongoUri = `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_URL}/?retryWrites=true&w=majority`;
 
   try {
     await mongoose.connect(mongoUri);
