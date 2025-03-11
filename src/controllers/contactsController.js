@@ -1,4 +1,7 @@
-import { getAllContacts, getContactById } from '../services/contacts.js';
+import {
+  getAllContacts,
+  getContactById as getById,
+} from '../services/contacts.js';
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import { createContact } from '../services/contacts.js';
 import createError from 'http-errors';
@@ -16,7 +19,7 @@ const getContacts = ctrlWrapper(async (req, res) => {
 
 const getContactById = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
-  const contact = await getContactById(contactId);
+  const contact = await getById(contactId);
   if (!contact) {
     throw createError(404, 'Contact not found');
   }
