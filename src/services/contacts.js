@@ -17,3 +17,15 @@ export async function getContactById(contactId) {
     throw new Error('Error fetching contact by ID');
   }
 }
+
+export async function createContact(data) {
+  return await Contact.create(data);
+}
+
+export async function updateContact(contactId, data) {
+  return await Contact.findByIdAndUpdate(contactId, data, { new: true });
+}
+
+export async function deleteContact(contactId) {
+  return await Contact.findByIdAndDelete(contactId);
+}
