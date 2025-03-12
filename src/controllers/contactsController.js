@@ -1,12 +1,12 @@
 import {
   getAllContacts,
   getContactById as getById,
+  createContact,
+  updateContact,
+  deleteContact,
 } from '../services/contacts.js';
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
-import { createContact } from '../services/contacts.js';
 import createError from 'http-errors';
-import { updateContact } from '../services/contacts.js';
-import { deleteContact } from '../services/contacts.js';
 
 const getContacts = ctrlWrapper(async (req, res) => {
   const contacts = await getAllContacts();
@@ -19,9 +19,13 @@ const getContacts = ctrlWrapper(async (req, res) => {
 
 const getContactById = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
-  const contact = await getById(contactId);
+  const contact = await getContactService(contactId);
   if (!contact) {
-    throw createError(404, 'Contact not found');
+    return res.status(404).json({
+      status: 404,
+      message: 'Contact not found',
+      data: null,
+    });
   }
   res.status(200).json({
     status: 200,
@@ -66,9 +70,17 @@ const removeContact = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
   const deletedContact = await deleteContact(contactId);
   if (!deletedContact) {
-    throw createError(404, 'Contact not found');
+    return res.status(404).json({
+      status: 404,
+      message: 'Contact not found',
+      data: null,
+    });
   }
-  res.status(204).send();
+  res.status(200).json({
+    status: 200,
+    message: 'Successfully deleted the contact!',
+    data: deletedContact,
+  });
 });
 
 export { getContacts, getContactById, addContact, patchContact, removeContact };
