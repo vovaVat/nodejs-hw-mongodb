@@ -21,11 +21,7 @@ const getContactById = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
   const contact = await getContactService(contactId);
   if (!contact) {
-    return res.status(404).json({
-      status: 404,
-      message: 'Contact not found',
-      data: null,
-    });
+    throw createError(404, 'Contact not found');
   }
   res.status(200).json({
     status: 200,
@@ -70,17 +66,9 @@ const removeContact = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
   const deletedContact = await deleteContact(contactId);
   if (!deletedContact) {
-    return res.status(404).json({
-      status: 404,
-      message: 'Contact not found',
-      data: null,
-    });
+    throw createError(404, 'Contact not found');
   }
-  res.status(200).json({
-    status: 200,
-    message: 'Successfully deleted the contact!',
-    data: deletedContact,
-  });
+  res.status(204).send();
 });
 
 export { getContacts, getContactById, addContact, patchContact, removeContact };
