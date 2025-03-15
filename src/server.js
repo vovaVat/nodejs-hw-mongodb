@@ -4,6 +4,7 @@ import pino from 'pino';
 require('dotenv').config();
 
 import contactsRouter from './routes/contacts'; // Імпортуємо роут для контактів
+import { errorHandler } from './middlewares/errorHandler';
 
 function setupServer() {
   const app = express();
@@ -18,6 +19,8 @@ function setupServer() {
   });
 
   app.use('/contacts', contactsRouter);
+
+  app.use(errorHandler);
 
   app.use((req, res) => {
     res.status(404).json({ message: 'Not found' });
