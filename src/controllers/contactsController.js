@@ -1,10 +1,11 @@
 import {
   getAllContacts,
-  getContactById as getById,
+  getContactById as getById, // 🟢 Використовуємо правильну назву
   createContact,
   updateContact,
   deleteContact,
 } from '../services/contacts.js';
+
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import createError from 'http-errors';
 
@@ -19,14 +20,14 @@ const getContacts = ctrlWrapper(async (req, res) => {
 
 const getContactById = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
-  const contact = await getContactService(contactId);
+  const contact = await getById(contactId);
 
   if (!contact) {
     throw createError(404, 'Contact not found');
   }
 
-  res.status(400).json({
-    status: 400,
+  res.status(200).json({
+    status: 200,
     message: `Successfully found contact with id ${contactId}!`,
     data: contact,
   });
