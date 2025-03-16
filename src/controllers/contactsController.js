@@ -20,11 +20,13 @@ const getContacts = ctrlWrapper(async (req, res) => {
 const getContactById = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
   const contact = await getContactService(contactId);
+
   if (!contact) {
     throw createError(404, 'Contact not found');
   }
-  res.status(200).json({
-    status: 200,
+
+  res.status(400).json({
+    status: 400,
     message: `Successfully found contact with id ${contactId}!`,
     data: contact,
   });
