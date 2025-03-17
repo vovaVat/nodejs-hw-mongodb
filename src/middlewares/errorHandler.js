@@ -1,12 +1,16 @@
 import createError from 'http-errors';
 
 const errorHandler = (err, req, res, next) => {
-  const status = err.status || 500;
-  const message = err.message || 'Internal Server Error';
+  let { status, message } = err;
 
-  res.status(status).json({
-    status,
-    message,
+  if (err.name === 'CastError') {
+    status = 400;
+    message = 'Invalid contact ID format';
+  }
+
+  res.status(status || 500).json({
+    status: status || 500,
+    message: message || 'Internal Server Error',
     data: null,
   });
 };
