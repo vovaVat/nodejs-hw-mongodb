@@ -1,6 +1,6 @@
 import {
   getAllContacts,
-  getContactById as getById,
+  getContactById as getById, // 🟢 Используем getById
   createContact,
   updateContact,
   deleteContact,
@@ -28,7 +28,7 @@ export const getContactById = async (req, res, next) => {
       return next(createError(400, 'Invalid contact ID format'));
     }
 
-    const contact = await Contact.findById(id);
+    const contact = await getById(id);
 
     if (!contact) {
       return next(createError(404, 'Contact not found'));
@@ -95,4 +95,4 @@ const removeContact = ctrlWrapper(async (req, res) => {
   res.status(204).send();
 });
 
-export { getContacts, getContactById, addContact, patchContact, removeContact };
+export { getContacts, addContact, patchContact, removeContact };
