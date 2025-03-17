@@ -1,6 +1,6 @@
 import {
   getAllContacts,
-  getContactById as getById, // 🟢 Використовуємо правильну назву
+  getContactById as getById,
   createContact,
   updateContact,
   deleteContact,
@@ -8,6 +8,8 @@ import {
 
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import createError from 'http-errors';
+import { Types } from 'mongoose';
+import Contact from '../models/contact.js';
 
 const getContacts = ctrlWrapper(async (req, res) => {
   const contacts = await getAllContacts();
@@ -63,6 +65,11 @@ const addContact = ctrlWrapper(async (req, res) => {
 
 const patchContact = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
+
+  if (!Types.ObjectId.isValid(contactId)) {
+    return next(createError(400, 'Invalid contact ID format'));
+  }
+
   const updatedContact = await updateContact(contactId, req.body);
   if (!updatedContact) {
     throw createError(404, 'Contact not found');
@@ -76,6 +83,11 @@ const patchContact = ctrlWrapper(async (req, res) => {
 
 const removeContact = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
+
+  if (!Types.ObjectId.isValid(contactId)) {
+    return next(createError(400, 'Invalid contact ID format'));
+  }
+
   const deletedContact = await deleteContact(contactId);
   if (!deletedContact) {
     throw createError(404, 'Contact not found');
