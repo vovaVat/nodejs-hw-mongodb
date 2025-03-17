@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import createError from 'http-errors';
 
 import contactsRouter from './routes/contacts.js';
-import { errorHandler } from './middlewares/errorHandler.js';
+import errorHandler from './middlewares/errorHandler.js';
 
 dotenv.config();
 
