@@ -18,20 +18,29 @@ const getContacts = ctrlWrapper(async (req, res) => {
   });
 });
 
-const getContactById = ctrlWrapper(async (req, res) => {
-  const { contactId } = req.params;
-  const contact = await getById(contactId);
+export const getContactById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
 
-  if (!contact) {
-    throw createError(404, 'Contact not found');
+    if (!Types.ObjectId.isValid(id)) {
+      return next(createError(400, 'Invalid contact ID format'));
+    }
+
+    const contact = await Contact.findById(id);
+
+    if (!contact) {
+      return next(createError(404, 'Contact not found'));
+    }
+
+    res.json({
+      status: 200,
+      message: 'Success',
+      data: contact,
+    });
+  } catch (error) {
+    next(error);
   }
-
-  res.status(200).json({
-    status: 200,
-    message: `Successfully found contact with id ${contactId}!`,
-    data: contact,
-  });
-});
+};
 
 const addContact = ctrlWrapper(async (req, res) => {
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
