@@ -24,10 +24,6 @@ export const getContactById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    if (!Types.ObjectId.isValid(id)) {
-      return next(createError(400, 'Invalid contact ID format'));
-    }
-
     const contact = await getById(id);
 
     if (!contact) {
