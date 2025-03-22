@@ -12,12 +12,36 @@ import { Types } from 'mongoose';
 import Contact from '../models/contact.js';
 
 const getContacts = ctrlWrapper(async (req, res) => {
-  const contacts = await getAllContacts();
-  res.status(200).json({
-    status: 200,
-    message: 'Successfully found contacts!',
-    data: contacts,
-  });
+  try {
+    const { page = 1, perPage = 10 } = req.query;
+
+    const pageNumber = parseInt(page, 10);
+    const perPageNumber = parseInt(perPage, 10);
+
+    const totalItems = await Contact.countDocuments();
+
+    const totalPages = Math.ceil(totalItems / perPageNumber);
+
+    const contacts = await Contact.find()
+      .skip((pageNumber - 1) * perPageNumber)
+      .limit(perPageNumber);
+
+    res.status(200).json({
+      status: 200,
+      message: 'Successfully found contacts!',
+      data: {
+        data: contacts,
+        page: pageNumber,
+        perPage: perPageNumber,
+        totalItems,
+        totalPages,
+        hasPreviousPage: pageNumber > 1,
+        hasNextPage: pageNumber < totalPages,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
 });
 
 export const getContactById = async (req, res, next) => {
