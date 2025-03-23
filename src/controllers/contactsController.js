@@ -46,9 +46,9 @@ const getContacts = ctrlWrapper(async (req, res) => {
 
 export const getContactById = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { contactId } = req.params;
 
-    const contact = await getById(id);
+    const contact = await getById(contactId);
 
     if (!contact) {
       return next(createError(404, 'Contact not found'));
