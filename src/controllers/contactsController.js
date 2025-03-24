@@ -13,16 +13,25 @@ import Contact from '../models/contact.js';
 
 const getContacts = ctrlWrapper(async (req, res) => {
   try {
-    const { page = 1, perPage = 10 } = req.query;
+    const {
+      page = 1,
+      perPage = 10,
+      sortBy = 'name',
+      sortOrder = 'asc',
+    } = req.query;
 
     const pageNumber = parseInt(page, 10);
     const perPageNumber = parseInt(perPage, 10);
+    const sortDirection = sortOrder === 'desc' ? -1 : 1;
+
+    const validSortFields = ['name', 'email', 'phone'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'name';
 
     const totalItems = await Contact.countDocuments();
-
     const totalPages = Math.ceil(totalItems / perPageNumber);
 
     const contacts = await Contact.find()
+      .sort({ [sortField]: sortDirection })
       .skip((pageNumber - 1) * perPageNumber)
       .limit(perPageNumber);
 
@@ -86,10 +95,6 @@ const addContact = ctrlWrapper(async (req, res) => {
 const patchContact = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
 
-  if (!Types.ObjectId.isValid(contactId)) {
-    return next(createError(400, 'Invalid contact ID format'));
-  }
-
   const updatedContact = await updateContact(contactId, req.body);
   if (!updatedContact) {
     throw createError(404, 'Contact not found');
@@ -103,10 +108,6 @@ const patchContact = ctrlWrapper(async (req, res) => {
 
 const removeContact = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
-
-  if (!Types.ObjectId.isValid(contactId)) {
-    return next(createError(400, 'Invalid contact ID format'));
-  }
 
   const deletedContact = await deleteContact(contactId);
   if (!deletedContact) {
