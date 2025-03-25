@@ -24,7 +24,7 @@ const getContacts = ctrlWrapper(async (req, res) => {
     const perPageNumber = parseInt(perPage, 10);
     const sortDirection = sortOrder === 'desc' ? -1 : 1;
 
-    const validSortFields = ['name', 'email', 'phone'];
+    const validSortFields = ['name', 'email', 'phoneNumber'];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'name';
 
     const totalItems = await Contact.countDocuments();
