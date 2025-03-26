@@ -7,7 +7,7 @@ export const contactSchema = Joi.object({
     .pattern(/^\d{10,15}$/)
     .required(),
   isFavourite: Joi.boolean(),
-  contactType: Joi.string().valid('personal', 'business', 'other').required(),
+  contactType: Joi.string().valid('personal', 'work', 'home').required(),
 });
 
 export const updateContactSchema = Joi.object({
@@ -15,5 +15,5 @@ export const updateContactSchema = Joi.object({
   email: Joi.string().email(),
   phoneNumber: Joi.string().pattern(/^\d{10,15}$/),
   isFavourite: Joi.boolean(),
-  contactType: Joi.string().valid('personal', 'business', 'other'),
+  contactType: Joi.string().valid('personal', 'work', 'home'),
 }).or('name', 'email', 'phoneNumber', 'isFavourite', 'contactType');
