@@ -6,6 +6,7 @@ import {
   patchContact,
   removeContact,
 } from '../controllers/contactsController.js';
+import authenticate from '../middlewares/authenticate.js';
 import validateBody from '../middlewares/validateBody.js';
 import { contactSchema, updateContactSchema } from '../validation/schemas.js';
 import isValidId from '../middlewares/isValidId.js';
