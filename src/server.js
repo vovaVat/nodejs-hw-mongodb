@@ -4,7 +4,9 @@ import pino from 'pino';
 import dotenv from 'dotenv';
 import createError from 'http-errors';
 
+import cookieParser from 'cookie-parser';
 import contactsRouter from './routes/contacts.js';
+import authRouter from './routes/auth.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 dotenv.config();
@@ -17,8 +19,11 @@ function setupServer() {
 
   app.use(cors());
   app.use(express.json());
+  app.use(cookieParser());
 
   app.use('/contacts', contactsRouter);
+
+  app.use('/auth', authRouter);
 
   app.use((req, res, next) => {
     next(createError(404, 'Route not found'));

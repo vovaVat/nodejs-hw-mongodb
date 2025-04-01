@@ -13,59 +13,30 @@ import Contact from '../models/contact.js';
 
 const getContacts = ctrlWrapper(async (req, res) => {
   try {
-    const {
-      page = 1,
-      perPage = 10,
-      sortBy = 'name',
-      sortOrder = 'asc',
-    } = req.query;
+    const contacts = await Contact.find({ userId: req.user._id });
 
-    const pageNumber = parseInt(page, 10);
-    const perPageNumber = parseInt(perPage, 10);
-    const sortDirection = sortOrder === 'desc' ? -1 : 1;
-
-    const validSortFields = ['name', 'email', 'phoneNumber'];
-    const sortField = validSortFields.includes(sortBy) ? sortBy : 'name';
-
-    const totalItems = await Contact.countDocuments();
-    const totalPages = Math.ceil(totalItems / perPageNumber);
-
-    const contacts = await Contact.find()
-      .sort({ [sortField]: sortDirection })
-      .skip((pageNumber - 1) * perPageNumber)
-      .limit(perPageNumber);
-
-    res.status(200).json({
-      status: 200,
-      message: 'Successfully found contacts!',
-      data: {
-        data: contacts,
-        page: pageNumber,
-        perPage: perPageNumber,
-        totalItems,
-        totalPages,
-        hasPreviousPage: pageNumber > 1,
-        hasNextPage: pageNumber < totalPages,
-      },
+    res.json({
+      status: 'success',
+      data: contacts,
     });
   } catch (error) {
-    res.status(500).json({ status: 500, message: error.message });
+    next(error);
   }
 });
 
 export const getContactById = async (req, res, next) => {
   try {
-    const { contactId } = req.params;
-
-    const contact = await getById(contactId);
+    const contact = await Contact.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
 
     if (!contact) {
-      return next(createError(404, 'Contact not found'));
+      throw createError(404, 'Contact not found');
     }
 
     res.json({
-      status: 200,
-      message: 'Success',
+      status: 'success',
       data: contact,
     });
   } catch (error) {
@@ -74,46 +45,68 @@ export const getContactById = async (req, res, next) => {
 };
 
 const addContact = ctrlWrapper(async (req, res) => {
-  const { name, phoneNumber, email, isFavourite, contactType } = req.body;
-  if (!name || !phoneNumber || !contactType) {
-    throw createError(400, 'Missing required fields');
+  try {
+    const { name, email, phoneNumber, isFavourite, contactType } = req.body;
+
+    const newContact = await Contact.create({
+      name,
+      email,
+      phoneNumber,
+      isFavourite,
+      contactType,
+      userId: req.user._id,
+    });
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Contact created successfully',
+      data: newContact,
+    });
+  } catch (error) {
+    next(error);
   }
-  const newContact = await createContact({
-    name,
-    phoneNumber,
-    email,
-    isFavourite,
-    contactType,
-  });
-  res.status(201).json({
-    status: 201,
-    message: 'Successfully created a contact!',
-    data: newContact,
-  });
 });
 
 const patchContact = ctrlWrapper(async (req, res) => {
-  const { contactId } = req.params;
+  try {
+    const updatedContact = await Contact.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      req.body,
+      { new: true }
+    );
 
-  const updatedContact = await updateContact(contactId, req.body);
-  if (!updatedContact) {
-    throw createError(404, 'Contact not found');
+    if (!updatedContact) {
+      throw createError(404, 'Contact not found');
+    }
+
+    res.json({
+      status: 'success',
+      message: 'Contact updated successfully',
+      data: updatedContact,
+    });
+  } catch (error) {
+    next(error);
   }
-  res.status(200).json({
-    status: 200,
-    message: 'Successfully patched a contact!',
-    data: updatedContact,
-  });
 });
 
 const removeContact = ctrlWrapper(async (req, res) => {
-  const { contactId } = req.params;
+  try {
+    const deletedContact = await Contact.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
 
-  const deletedContact = await deleteContact(contactId);
-  if (!deletedContact) {
-    throw createError(404, 'Contact not found');
+    if (!deletedContact) {
+      throw createError(404, 'Contact not found');
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Contact deleted successfully',
+    });
+  } catch (error) {
+    next(error);
   }
-  res.status(204).send();
 });
 
 export { getContacts, addContact, patchContact, removeContact };

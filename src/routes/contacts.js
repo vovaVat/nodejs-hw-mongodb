@@ -12,6 +12,8 @@ import isValidId from '../middlewares/isValidId.js';
 
 const router = express.Router();
 
+router.use(authenticate);
+
 router.get('/', getContacts);
 router.get('/:contactId', isValidId, getContactById);
 router.post('/', validateBody(contactSchema), addContact);
