@@ -12,6 +12,7 @@ import {
 } from '../services/authService.js';
 import Session from '../models/sessionModel.js';
 import { removeSessionByToken } from '../services/authService.js';
+import jwt from 'jsonwebtoken';
 
 export const register = async (req, res, next) => {
   try {
