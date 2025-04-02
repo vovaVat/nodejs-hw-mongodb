@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import createHttpError from 'http-errors';
 import User from '../models/userModel.js';
 import { registerSchema } from '../validation/authValidation.js';
+import { loginSchema } from '../validation/authValidation.js';
 import createError from 'http-errors';
 import {
   verifyToken,
