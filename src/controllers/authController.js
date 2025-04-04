@@ -4,6 +4,7 @@ import User from '../models/userModel.js';
 import { registerSchema } from '../validation/authValidation.js';
 import { loginSchema } from '../validation/authValidation.js';
 import createError from 'http-errors';
+import { randomBytes } from 'crypto';
 import {
   verifyToken,
   generateTokens,
@@ -12,7 +13,6 @@ import {
 } from '../services/authService.js';
 import Session from '../models/sessionModel.js';
 import { removeSessionByToken } from '../services/authService.js';
-import jwt from 'jsonwebtoken';
 
 export const register = async (req, res, next) => {
   try {
@@ -62,16 +62,10 @@ export const login = async (req, res, next) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw createHttpError(401, 'Invalid email or password');
 
-    const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: ACCESS_TOKEN_EXPIRATION,
-    });
-    const refreshToken = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: REFRESH_TOKEN_EXPIRATION }
-    );
-
     await Session.deleteOne({ userId: user._id });
+
+    const accessToken = randomBytes(30).toString('base64');
+    const refreshToken = randomBytes(30).toString('base64');
 
     const session = await Session.create({
       userId: user._id,
@@ -79,14 +73,16 @@ export const login = async (req, res, next) => {
       refreshToken,
       accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000),
       refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    res.cookie('sessionId', session._id, {
+      httpOnly: true,
+      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     });
 
     res.status(200).json({
@@ -101,39 +97,44 @@ export const login = async (req, res, next) => {
 
 export const refreshSession = async (req, res, next) => {
   try {
-    const { refreshToken } = req.cookies;
+    const { refreshToken: refreshTokenCookie } = req.cookies;
+    const { sessionId } = req.cookies;
 
-    if (!refreshToken) {
-      throw createError(401, 'Refresh token missing');
-    }
-
-    const session = await Session.findOne({ refreshToken });
+    const session = await Session.findOne({
+      _id: sessionId,
+      refreshToken: refreshTokenCookie,
+    });
 
     if (!session) {
-      throw createError(403, 'Invalid refresh token');
+      throw createHttpError(401, 'Session not found');
     }
 
-    const decoded = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const isSessionTokenExpired =
+      new Date() > new Date(session.refreshTokenValidUntil);
 
-    if (!decoded) {
-      await removeSession(session._id);
-      throw createError(403, 'Invalid or expired refresh token');
+    if (isSessionTokenExpired) {
+      throw createHttpError(401, 'Session token expired');
     }
 
-    // Видаляємо стару сесію
-    await removeSession(session._id);
+    const accessToken = randomBytes(30).toString('base64');
+    const refreshToken = randomBytes(30).toString('base64');
 
-    // Генеруємо нові токени
-    const { accessToken, newRefreshToken } = generateTokens(decoded.userId);
+    const newSession = await Session.create({
+      userId: session.userId,
+      accessToken,
+      refreshToken,
+      accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000),
+      refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
 
-    // Створюємо нову сесію
-    await createSession(decoded.userId, accessToken, newRefreshToken);
-
-    // Записуємо новий refreshToken у кукі
-    res.cookie('refreshToken', newRefreshToken, {
+    res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 днів
+      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    res.cookie('sessionId', newSession._id, {
+      httpOnly: true,
+      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     });
 
     res.status(200).json({
@@ -157,6 +158,7 @@ export const logout = async (req, res, next) => {
     await removeSessionByToken(refreshToken);
 
     res.clearCookie('refreshToken');
+    res.clearCookie('sessionId');
 
     res.status(204).send();
   } catch (error) {

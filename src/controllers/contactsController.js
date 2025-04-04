@@ -1,6 +1,6 @@
 import {
   getAllContacts,
-  getContactById as getById, // 🟢 Используем getById
+  getContactById as getById,
   createContact,
   updateContact,
   deleteContact,
@@ -12,101 +12,109 @@ import { Types } from 'mongoose';
 import Contact from '../models/contact.js';
 
 const getContacts = ctrlWrapper(async (req, res) => {
-  try {
-    const contacts = await Contact.find({ userId: req.user._id });
+  const {
+    page = 1,
+    perPage = 10,
+    sortBy = 'name',
+    sortOrder = 'asc',
+  } = req.query;
 
-    res.json({
-      status: 'success',
+  const pageNumber = parseInt(page, 10);
+  const perPageNumber = parseInt(perPage, 10);
+  const sortDirection = sortOrder === 'desc' ? -1 : 1;
+
+  const validSortFields = ['name', 'email', 'phoneNumber'];
+  const sortField = validSortFields.includes(sortBy) ? sortBy : 'name';
+
+  const contactsQuery = Contact.find({ userId: req.user._id });
+
+  const totalItems = await Contact.find().merge(contactsQuery).countDocuments();
+  const totalPages = Math.ceil(totalItems / perPageNumber);
+
+  const contacts = await Contact.find({ userId: req.user._id })
+    .sort({ [sortField]: sortDirection })
+    .skip((pageNumber - 1) * perPageNumber)
+    .limit(perPageNumber);
+
+  res.json({
+    status: 200,
+    message: 'Successfully found contacts!',
+    data: {
       data: contacts,
-    });
-  } catch (error) {
-    next(error);
-  }
+      page: pageNumber,
+      perPage: perPageNumber,
+      totalItems,
+      totalPages,
+      hasPreviousPage: pageNumber > 1,
+      hasNextPage: pageNumber < totalPages,
+    },
+  });
 });
 
 export const getContactById = async (req, res, next) => {
-  try {
-    const contact = await Contact.findOne({
-      _id: req.params.id,
-      userId: req.user._id,
-    });
+  const contact = await Contact.findOne({
+    _id: req.params.contactId,
+    userId: req.user._id,
+  });
 
-    if (!contact) {
-      throw createError(404, 'Contact not found');
-    }
-
-    res.json({
-      status: 'success',
-      data: contact,
-    });
-  } catch (error) {
-    next(error);
+  if (!contact) {
+    throw createError(404, 'Contact not found');
   }
+
+  res.json({
+    status: 200,
+    data: contact,
+  });
 };
 
 const addContact = ctrlWrapper(async (req, res) => {
-  try {
-    const { name, email, phoneNumber, isFavourite, contactType } = req.body;
+  const { name, email, phoneNumber, isFavourite, contactType } = req.body;
 
-    const newContact = await Contact.create({
-      name,
-      email,
-      phoneNumber,
-      isFavourite,
-      contactType,
-      userId: req.user._id,
-    });
+  const newContact = await Contact.create({
+    name,
+    email,
+    phoneNumber,
+    isFavourite,
+    contactType,
+    userId: req.user._id,
+  });
 
-    res.status(201).json({
-      status: 'success',
-      message: 'Contact created successfully',
-      data: newContact,
-    });
-  } catch (error) {
-    next(error);
-  }
+  res.status(201).json({
+    status: 201,
+    message: 'Contact created successfully',
+    data: newContact,
+  });
 });
 
 const patchContact = ctrlWrapper(async (req, res) => {
-  try {
-    const updatedContact = await Contact.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user._id },
-      req.body,
-      { new: true }
-    );
+  const updatedContact = await Contact.findOneAndUpdate(
+    { _id: req.params.contactId, userId: req.user._id },
+    req.body,
+    { new: true }
+  );
 
-    if (!updatedContact) {
-      throw createError(404, 'Contact not found');
-    }
-
-    res.json({
-      status: 'success',
-      message: 'Contact updated successfully',
-      data: updatedContact,
-    });
-  } catch (error) {
-    next(error);
+  if (!updatedContact) {
+    throw createError(404, 'Contact not found');
   }
+
+  res.json({
+    status: 200,
+    message: 'Contact updated successfully',
+    data: updatedContact,
+  });
 });
 
 const removeContact = ctrlWrapper(async (req, res) => {
-  try {
-    const deletedContact = await Contact.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user._id,
-    });
+  const deletedContact = await Contact.findOneAndDelete({
+    _id: req.params.contactId,
+    userId: req.user._id,
+  });
 
-    if (!deletedContact) {
-      throw createError(404, 'Contact not found');
-    }
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Contact deleted successfully',
-    });
-  } catch (error) {
-    next(error);
+  if (!deletedContact) {
+    throw createError(404, 'Contact not found');
   }
+
+  res.status(204).end();
 });
 
 export { getContacts, addContact, patchContact, removeContact };
