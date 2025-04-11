@@ -9,7 +9,7 @@ import { requestResetEmailSchema } from '../validation/authValidation.js';
 import { resetPasswordSchema } from '../validation/authValidation.js';
 import { resetPasswordController } from '../controllers/authController.js';
 import validateBody from '../middlewares/validateBody.js';
-import ctrlWrapper from '../utils/ctrlWrapper.js';
+import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 
 const router = express.Router();
 
