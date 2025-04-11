@@ -14,6 +14,8 @@ import {
 import Session from '../models/sessionModel.js';
 import { removeSessionByToken } from '../services/authService.js';
 
+import { resetPassword } from '../services/authService.js';
+
 export const register = async (req, res, next) => {
   try {
     // Валідація даних
@@ -164,4 +166,21 @@ export const logout = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+export const requestResetEmailController = async (req, res) => {
+  await requestResetEmailController(req.body.email);
+  res.json({
+    message: 'Reset password email was successfully sent!',
+    status: 200,
+    data: {},
+  });
+};
+export const resetPasswordController = async (req, res) => {
+  await resetPassword(req.body);
+  res.json({
+    message: 'Password was successfully reset!',
+    status: 200,
+    data: {},
+  });
 };

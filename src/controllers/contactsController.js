@@ -10,6 +10,7 @@ import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import createError from 'http-errors';
 import { Types } from 'mongoose';
 import Contact from '../models/contact.js';
+import { uploadToCloudinary } from '../utils/cloudinary.js';
 
 const getContacts = ctrlWrapper(async (req, res) => {
   const {
@@ -67,8 +68,27 @@ export const getContactById = async (req, res, next) => {
   });
 };
 
+const removeContact = ctrlWrapper(async (req, res) => {
+  const deletedContact = await Contact.findOneAndDelete({
+    _id: req.params.contactId,
+    userId: req.user._id,
+  });
+
+  if (!deletedContact) {
+    throw createError(404, 'Contact not found');
+  }
+
+  res.status(204).end();
+});
+
 const addContact = ctrlWrapper(async (req, res) => {
   const { name, email, phoneNumber, isFavourite, contactType } = req.body;
+
+  let photoUrl = '';
+  if (req.file) {
+    const result = await uploadToCloudinary(req.file);
+    photoUrl = result.secure_url;
+  }
 
   const newContact = await Contact.create({
     name,
@@ -77,6 +97,7 @@ const addContact = ctrlWrapper(async (req, res) => {
     isFavourite,
     contactType,
     userId: req.user._id,
+    photo: photoUrl,
   });
 
   res.status(201).json({
@@ -87,9 +108,24 @@ const addContact = ctrlWrapper(async (req, res) => {
 });
 
 const patchContact = ctrlWrapper(async (req, res) => {
+  let photoUrl;
+
+  if (req.file) {
+    const result = await uploadToCloudinary(req.file);
+    photoUrl = result.secure_url;
+  }
+
+  const updateData = {
+    ...req.body,
+  };
+
+  if (photoUrl) {
+    updateData.photo = photoUrl;
+  }
+
   const updatedContact = await Contact.findOneAndUpdate(
     { _id: req.params.contactId, userId: req.user._id },
-    req.body,
+    updateData,
     { new: true }
   );
 
@@ -102,19 +138,6 @@ const patchContact = ctrlWrapper(async (req, res) => {
     message: 'Contact updated successfully',
     data: updatedContact,
   });
-});
-
-const removeContact = ctrlWrapper(async (req, res) => {
-  const deletedContact = await Contact.findOneAndDelete({
-    _id: req.params.contactId,
-    userId: req.user._id,
-  });
-
-  if (!deletedContact) {
-    throw createError(404, 'Contact not found');
-  }
-
-  res.status(204).end();
 });
 
 export { getContacts, addContact, patchContact, removeContact };

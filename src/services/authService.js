@@ -2,7 +2,11 @@ import bcrypt from 'bcryptjs';
 import createHttpError from 'http-errors';
 import User from '../models/userModel.js';
 import createError from 'http-errors';
+import jwt from 'jsonwebtoken';
 import Session from '../models/sessionModel.js';
+import { sendEmail } from '../utils/sendMail.js';
+import userModel from '../models/userModel.js';
+import { getEnvVar } from '../utils/getEnvVar.js';
 
 export const removeSessionByToken = async (refreshToken) => {
   await Session.findOneAndDelete({ refreshToken });
@@ -79,4 +83,53 @@ export const createSession = async (userId, accessToken, refreshToken) => {
     accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000),
     refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
+};
+
+export const requestResetToken = async (email) => {
+  const { JWT_SECRET, SMTP_FROM } = await process.env;
+  const user = await UsersCollection.findOne({ email });
+  if (!user) {
+    throw createHttpError(404, 'User not found');
+  }
+  const resetToken = jwt.sign(
+    {
+      sub: user._id,
+      email,
+    },
+    JWT_SECRET,
+    {
+      expiresIn: '15m',
+    }
+  );
+
+  await sendEmail({
+    from: SMTP_FROM,
+    to: email,
+    subject: 'Reset your password',
+    html: `<p>Click <a href="${resetToken}">here</a> to reset your password!</p>`,
+  });
+};
+
+export const resetPassword = async (payload) => {
+  let entries;
+
+  try {
+    entries = jwt.verify(payload.token, getEnvVar('JWT_SECRET'));
+  } catch (err) {
+    if (err instanceof Error) throw createHttpError(401, err.message);
+    throw err;
+  }
+
+  const user = await userModel.findOne({
+    email: entries.email,
+    _id: entries.sub,
+  });
+
+  if (!user) {
+    throw createHttpError(404, 'User not found');
+  }
+
+  const encryptedPassword = await bcrypt.hash(payload.password, 10);
+
+  await userModel.updateOne({ _id: user._id }, { password: encryptedPassword });
 };
