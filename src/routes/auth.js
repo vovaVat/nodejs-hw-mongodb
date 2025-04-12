@@ -8,8 +8,8 @@ import { login, refreshSession } from '../controllers/authController.js';
 import { requestResetEmailSchema } from '../validation/authValidation.js';
 import { resetPasswordSchema } from '../validation/authValidation.js';
 import { resetPasswordController } from '../controllers/authController.js';
-import validateBody from '../middlewares/validateBody.js';
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
+import validateBody from '../middlewares/validateBody.js';
 
 const router = express.Router();
 

@@ -86,8 +86,8 @@ export const createSession = async (userId, accessToken, refreshToken) => {
 };
 
 export const requestResetToken = async (email) => {
-  const { JWT_SECRET, SMTP_FROM } = await process.env;
-  const user = await UsersCollection.findOne({ email });
+  const { JWT_SECRET, SMTP_FROM } = process.env;
+  const user = await User.findOne({ email });
   if (!user) {
     throw createHttpError(404, 'User not found');
   }
@@ -120,7 +120,7 @@ export const resetPassword = async (payload) => {
     throw err;
   }
 
-  const user = await userModel.findOne({
+  const user = await User.findOne({
     email: entries.email,
     _id: entries.sub,
   });

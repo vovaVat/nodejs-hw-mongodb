@@ -1,7 +1,10 @@
 import bcrypt from 'bcryptjs';
 import createHttpError from 'http-errors';
 import User from '../models/userModel.js';
-import { registerSchema } from '../validation/authValidation.js';
+import {
+  registerSchema,
+  requestResetEmailSchema,
+} from '../validation/authValidation.js';
 import { loginSchema } from '../validation/authValidation.js';
 import createError from 'http-errors';
 import { randomBytes } from 'crypto';
@@ -10,6 +13,7 @@ import {
   generateTokens,
   removeSession,
   createSession,
+  requestResetToken,
 } from '../services/authService.js';
 import Session from '../models/sessionModel.js';
 import { removeSessionByToken } from '../services/authService.js';
@@ -169,7 +173,16 @@ export const logout = async (req, res, next) => {
 };
 
 export const requestResetEmailController = async (req, res) => {
-  await requestResetEmailController(req.body.email);
+  const { error } = requestResetEmailSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({
+      status: 400,
+      message: 'Validation Error',
+      errors: error.details.map((detail) => detail.message),
+    });
+  }
+
+  await requestResetToken(req.body.email);
   res.json({
     message: 'Reset password email was successfully sent!',
     status: 200,

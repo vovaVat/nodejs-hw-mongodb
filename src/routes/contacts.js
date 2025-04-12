@@ -11,6 +11,8 @@ import validateBody from '../middlewares/validateBody.js';
 import { contactSchema, updateContactSchema } from '../validation/schemas.js';
 import isValidId from '../middlewares/isValidId.js';
 import upload from '../middlewares/upload.js';
+import { createContactSchema } from '../validation/contacts.js';
+import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 
 const router = express.Router();
 
@@ -20,16 +22,16 @@ router.get('/', getContacts);
 router.get('/:contactId', isValidId, getContactById);
 router.post(
   '/',
-  validateBody(contactSchema),
   upload.single('photo'),
-  addContact
+  validateBody(createContactSchema),
+  ctrlWrapper(addContact)
 );
 router.patch(
   '/:contactId',
   isValidId,
-  validateBody(updateContactSchema),
   upload.single('photo'),
-  patchContact
+  validateBody(updateContactSchema),
+  ctrlWrapper(patchContact)
 );
 router.delete('/:contactId', isValidId, removeContact);
 

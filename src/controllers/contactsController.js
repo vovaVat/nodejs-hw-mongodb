@@ -11,6 +11,12 @@ import createError from 'http-errors';
 import { Types } from 'mongoose';
 import Contact from '../models/contact.js';
 import { uploadToCloudinary } from '../utils/cloudinary.js';
+import {
+  createContactSchema,
+  updateContactSchema,
+} from '../validation/contacts.js';
+import { saveFileToCloudinary } from '../utils/saveFileToCloudinary.js';
+import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
 
 const getContacts = ctrlWrapper(async (req, res) => {
   const {
@@ -82,58 +88,91 @@ const removeContact = ctrlWrapper(async (req, res) => {
 });
 
 const addContact = ctrlWrapper(async (req, res) => {
-  const { name, email, phoneNumber, isFavourite, contactType } = req.body;
+  const userId = req.user._id;
+  const { error } = createContactSchema.validate(req.body, {
+    abortEarly: false,
+  });
 
-  let photoUrl = '';
+  if (error) {
+    return res.status(400).json({
+      status: 400,
+      message: 'Validation Error',
+      errors: error.details.map((detail) => ({
+        field: detail.path.join('.'),
+        message: detail.message,
+      })),
+    });
+  }
+  const contactData = {
+    ...req.body,
+    userId,
+  };
+
   if (req.file) {
-    const result = await uploadToCloudinary(req.file);
-    photoUrl = result.secure_url;
+    try {
+      const useCloudinary = getEnvVar('ENABLE_CLOUDINARY') === 'true';
+      const photoUrl = useCloudinary
+        ? await saveFileToCloudinary(req.file)
+        : await saveFileToUploadDir(req.file);
+
+      contactData.photo = photoUrl;
+      console.log('Photo URL:', photoUrl);
+    } catch (fileError) {
+      console.error('Error saving file:', fileError);
+    }
   }
 
-  const newContact = await Contact.create({
-    name,
-    email,
-    phoneNumber,
-    isFavourite,
-    contactType,
-    userId: req.user._id,
-    photo: photoUrl,
-  });
+  const newContact = await createContact(contactData, userId);
 
   res.status(201).json({
     status: 201,
-    message: 'Contact created successfully',
+    message: 'Successfully created new contact',
     data: newContact,
   });
 });
 
 const patchContact = ctrlWrapper(async (req, res) => {
-  let photoUrl;
+  const { contactId } = req.params;
+  const userId = req.user._id;
+
+  const existingContact = await getContactById(contactId, userId);
+  if (!existingContact) {
+    return res.status(404).json({
+      status: 404,
+      message: 'Contact not found',
+    });
+  }
+
+  const { error } = updateContactSchema.validate(req.body, {
+    abortEarly: false,
+  });
+  if (error) {
+    return res.status(400).json({
+      status: 400,
+      message: 'Validation Error',
+      errors: error.details.map((detail) => ({
+        field: detail.path.join('.'),
+        message: detail.message,
+      })),
+    });
+  }
+  const updatedData = { ...req.body };
 
   if (req.file) {
-    const result = await uploadToCloudinary(req.file);
-    photoUrl = result.secure_url;
+    try {
+      const useCloudinary = getEnvVar('ENABLE_CLOUDINARY') === 'true';
+      updatedData.photo = useCloudinary
+        ? await saveFileToCloudinary(req.file)
+        : await saveFileToUploadDir(req.file);
+      console.log('Updated photo URL:', updatedData.photo);
+    } catch (fileError) {
+      console.error('Error saving file:', fileError);
+    }
   }
 
-  const updateData = {
-    ...req.body,
-  };
+  const updatedContact = await updateContact(contactId, updatedData, userId);
 
-  if (photoUrl) {
-    updateData.photo = photoUrl;
-  }
-
-  const updatedContact = await Contact.findOneAndUpdate(
-    { _id: req.params.contactId, userId: req.user._id },
-    updateData,
-    { new: true }
-  );
-
-  if (!updatedContact) {
-    throw createError(404, 'Contact not found');
-  }
-
-  res.json({
+  res.status(200).json({
     status: 200,
     message: 'Contact updated successfully',
     data: updatedContact,
