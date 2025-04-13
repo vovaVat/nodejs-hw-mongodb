@@ -7,7 +7,7 @@ import Session from '../models/sessionModel.js';
 import { sendEmail } from '../utils/sendMail.js';
 import userModel from '../models/userModel.js';
 import { getEnvVar } from '../utils/getEnvVar.js';
-import { TEMPLATES_DIR } from '../constants/index.js';
+import { SMTP, TEMPLATES_DIR } from '../constants/index.js';
 import handlebars from 'handlebars';
 import path from 'node:path';
 import fs from 'node:fs/promises';
@@ -146,7 +146,7 @@ export const requestResetToken = async (email) => {
     });
 
     await sendEmail({
-      from: getEnvVar(SMTP.SMTP_FROM),
+      from: getEnvVar('SMTP_FROM'),
       to: email,
       subject: 'Reset your password',
       html,
