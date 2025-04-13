@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 import contactsRouter from './routes/contacts.js';
 import authRouter from './routes/auth.js';
 import errorHandler from './middlewares/errorHandler.js';
+import { UPLOAD_DIR } from './constants/index.js';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ function setupServer() {
   app.use('/contacts', contactsRouter);
 
   app.use('/auth', authRouter);
+  app.use('/uploads', express.static(UPLOAD_DIR));
 
   app.use((req, res, next) => {
     next(createError(404, 'Route not found'));
