@@ -7,6 +7,10 @@ import Session from '../models/sessionModel.js';
 import { sendEmail } from '../utils/sendMail.js';
 import userModel from '../models/userModel.js';
 import { getEnvVar } from '../utils/getEnvVar.js';
+import { TEMPLATES_DIR } from '../constants/index.js';
+import handlebars from 'handlebars';
+import path from 'node:path';
+import fs from 'node:fs/promises';
 
 export const removeSessionByToken = async (refreshToken) => {
   await Session.findOneAndDelete({ refreshToken });
@@ -85,31 +89,6 @@ export const createSession = async (userId, accessToken, refreshToken) => {
   });
 };
 
-export const requestResetToken = async (email) => {
-  const { JWT_SECRET, SMTP_FROM } = process.env;
-  const user = await User.findOne({ email });
-  if (!user) {
-    throw createHttpError(404, 'User not found');
-  }
-  const resetToken = jwt.sign(
-    {
-      sub: user._id,
-      email,
-    },
-    JWT_SECRET,
-    {
-      expiresIn: '15m',
-    }
-  );
-
-  await sendEmail({
-    from: SMTP_FROM,
-    to: email,
-    subject: 'Reset your password',
-    html: `<p>Click <a href="${resetToken}">here</a> to reset your password!</p>`,
-  });
-};
-
 export const resetPassword = async (payload) => {
   let entries;
 
@@ -132,4 +111,48 @@ export const resetPassword = async (payload) => {
   const encryptedPassword = await bcrypt.hash(payload.password, 10);
 
   await userModel.updateOne({ _id: user._id }, { password: encryptedPassword });
+};
+
+export const requestResetToken = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw createError(404, 'User not found');
+  }
+  const resetToken = jwt.sign(
+    {
+      sub: user._id,
+      email,
+    },
+    getEnvVar('JWT_SECRET'),
+    {
+      expiresIn: '5m',
+    }
+  );
+
+  const resetPasswordTemplatePath = path.join(
+    TEMPLATES_DIR,
+    'reset-password-email.html'
+  );
+
+  try {
+    const templateSource = (
+      await fs.readFile(resetPasswordTemplatePath)
+    ).toString();
+
+    const template = handlebars.compile(templateSource);
+    const html = template({
+      name: user.name,
+      link: `${getEnvVar('APP_DOMAIN')}/reset-pwd?token=${resetToken}`,
+    });
+
+    await sendEmail({
+      from: getEnvVar(SMTP.SMTP_FROM),
+      to: email,
+      subject: 'Reset your password',
+      html,
+    });
+  } catch (err) {
+    console.error('JWT verification error:', err);
+    throw createError(500, 'Failed to send the email, please try again later.');
+  }
 };
