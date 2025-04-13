@@ -17,6 +17,7 @@ import {
 } from '../validation/contacts.js';
 import { saveFileToCloudinary } from '../utils/saveFileToCloudinary.js';
 import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
+import { getEnvVar } from '../utils/getEnvVar.js';
 
 const getContacts = ctrlWrapper(async (req, res) => {
   const {
@@ -133,49 +134,32 @@ const addContact = ctrlWrapper(async (req, res) => {
 
 const patchContact = ctrlWrapper(async (req, res) => {
   const { contactId } = req.params;
-  const userId = req.user._id;
+  const photo = req.file;
 
-  const existingContact = await getContactById(contactId, userId);
-  if (!existingContact) {
-    return res.status(404).json({
-      status: 404,
-      message: 'Contact not found',
-    });
-  }
+  let photoUrl;
 
-  const { error } = updateContactSchema.validate(req.body, {
-    abortEarly: false,
-  });
-  if (error) {
-    return res.status(400).json({
-      status: 400,
-      message: 'Validation Error',
-      errors: error.details.map((detail) => ({
-        field: detail.path.join('.'),
-        message: detail.message,
-      })),
-    });
-  }
-  const updatedData = { ...req.body };
-
-  if (req.file) {
-    try {
-      const useCloudinary = getEnvVar('ENABLE_CLOUDINARY') === 'true';
-      updatedData.photo = useCloudinary
-        ? await saveFileToCloudinary(req.file)
-        : await saveFileToUploadDir(req.file);
-      console.log('Updated photo URL:', updatedData.photo);
-    } catch (fileError) {
-      console.error('Error saving file:', fileError);
+  if (photo) {
+    if (getEnvVar('ENABLE_CLOUDINARY') === 'true') {
+      photoUrl = await saveFileToCloudinary(photo);
+    } else {
+      photoUrl = await saveFileToUploadDir(photo);
     }
   }
 
-  const updatedContact = await updateContact(contactId, updatedData, userId);
+  const result = await updateContact(contactId, {
+    ...req.body,
+    photo: photoUrl,
+  });
 
-  res.status(200).json({
+  if (!result) {
+    next(createHttpError(404, 'Student not found'));
+    return;
+  }
+
+  res.json({
     status: 200,
-    message: 'Contact updated successfully',
-    data: updatedContact,
+    message: `Successfully patched a student!`,
+    data: result,
   });
 });
 
