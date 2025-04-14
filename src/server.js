@@ -9,6 +9,7 @@ import contactsRouter from './routes/contacts.js';
 import authRouter from './routes/auth.js';
 import errorHandler from './middlewares/errorHandler.js';
 import { UPLOAD_DIR } from './constants/index.js';
+import { swaggerDocs } from './middlewares/swaggerDocs.js';
 
 dotenv.config();
 
@@ -26,7 +27,7 @@ function setupServer() {
 
   app.use('/auth', authRouter);
   app.use('/uploads', express.static(UPLOAD_DIR));
-
+  app.use('/api-docs', swaggerDocs());
   app.use((req, res, next) => {
     next(createError(404, 'Route not found'));
   });

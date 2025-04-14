@@ -6,12 +6,16 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "build": "npm run build-docs",
+    "build-docs": "redocly bundle --ext json -o docs/swagger.json",
+    "preview-docs": "redocly preview-docs"
   },
   "keywords": [],
   "author": "Volodymyr Vatutin <vovavat97@gmail.com>",
   "license": "ISC",
   "devDependencies": {
+    "@redocly/cli": "^1.34.2",
     "eslint": "^9.21.0",
     "nodemon": "^3.1.9"
   },
@@ -31,6 +35,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodejs-hw-mongodb": "file:",
     "nodemailer": "^6.10.0",
-    "pino": "^9.6.0"
+    "pino": "^9.6.0",
+    "swagger-ui-express": "^5.0.1"
   }
 }
